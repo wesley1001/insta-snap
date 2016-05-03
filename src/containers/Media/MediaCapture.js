@@ -57,7 +57,7 @@ class MediaCapture extends Component {
   }
 
   handleCapture(media) {
-    this.setState({
+    return this.setState({
       hasCaptured:true,
       mediaUri: media
     });

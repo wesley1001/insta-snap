@@ -35,18 +35,22 @@ function userFavoritesFailure(err) {
  */
 
 // get Auth user's favorites
-export function fetchUserFavorites() {
-  return (dispatch) => {
+export function fetchUserFavorites(userID,requiredFields=[]) {
+  return (dispatch,getState) => {
+    const user = getState().entities.users[userID];
+    if (user && requiredFields.every(key => user.hasOwnProperty(key))) {
+      return null;
+    }
     dispatch(userFavoritesRequest());
     return getUserToken().then((token) => {
-      const url = API_ROOT + `/favorites?api_token=${token}`;
+      const url = API_ROOT + `/users/${userID}/favorites?api_token=${token}`;
       return fetch(url)
         .then(response => response.json())
         .then(json => {
           if(json.success) {
             dispatch(userFavoritesSuccess(json));
           } else {
-            Promise.reject(new Error(json.message))
+            throw new Error(json.message);
           }
         })
     }).catch((err)=> dispatch(userFavoritesFailure(err)))

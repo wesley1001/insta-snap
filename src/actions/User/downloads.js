@@ -36,19 +36,22 @@ function userDownloadsFailure(err) {
  */
 
 // get Auth user's downloads
-export function fetchUserDownloads() {
-  return (dispatch) => {
+export function fetchUserDownloads(userID,requiredFields=[]) {
+  return (dispatch,getState) => {
+    const user = getState().entities.users[userID];
+    if (user && requiredFields.every(key => user.hasOwnProperty(key))) {
+      return null;
+    }
     dispatch(userDownloadsRequest());
     return getUserToken().then((token) => {
-      const url = API_ROOT + `/downloads?api_token=${token}`;
+      const url = API_ROOT + `/users/${userID}/downloads?api_token=${token}`;
       return fetch(url)
         .then(response => response.json())
         .then(json => {
           if(json.success) {
             dispatch(userDownloadsSuccess(json));
           } else {
-            console.log('rejected');
-            Promise.reject(new Error(json.message))
+            throw new Error(json.message);
           }
         })
     }).catch((err)=> dispatch(userDownloadsFailure(err)))

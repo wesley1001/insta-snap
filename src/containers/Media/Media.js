@@ -5,7 +5,6 @@ import { Actions } from 'react-native-router-flux';
 import { favoriteMedia } from './../../actions/Media/favorites';
 import { downloadMedia } from './../../actions/Media/downloads';
 import { fetchMedia } from './../../actions/Media/media';
-import { setCurrentUser } from './../../actions/User/user';
 import MediaItem from './../../components/Media/MediaItem';
 import MediaCommentIcon from './../../components/Media/Comment/MediaCommentIcon';
 import MediaFavoriteIcon from './../../components/Media/MediaFavoriteIcon';
@@ -15,83 +14,91 @@ import LoadingIndicator from './../../components/LoadingIndicator';
 
 class Media extends Component {
 
+  static propTypes = {
+    mediaID:PropTypes.number.isRequired
+  };
+
   constructor(props) {
     super(props);
   }
 
-  componentWillMount() {
-    const {dispatch} = this.props;
-    if(!this.props.media.user) {
-      dispatch(fetchMedia());
-    }
+  componentDidMount() {
+    this.props.dispatch(fetchMedia(this.props.mediaID,['user']));
   }
 
   loadComments() {
-    Actions.mediaCommentsScene();
+    return Actions.mediaCommentsScene({
+      mediaID:this.props.mediaID
+    });
   }
 
   loadFavorites() {
-    Actions.mediaFavoritesScene();
+    return Actions.mediaFavoritesScene({
+      mediaID:this.props.mediaID
+    });
   }
 
   loadDownloads() {
-    Actions.mediaDownloadsScene();
-  }
-
-  favoriteMedia() {
-    if(!this.props.userReducer.isAuthenticated) {
-      return Actions.loginDialog({dialogText:'Please Login to view and manage your Favorites'});
-    }
-    this.props.dispatch(favoriteMedia());
-  }
-
-  downloadMedia() {
-    if(!this.props.userReducer.isAuthenticated) {
-      return Actions.loginDialog({dialogText:'Please Login to view and manage your Favorites'});
-    }
-    this.props.dispatch(downloadMedia());
+    return Actions.mediaDownloadsScene({
+      mediaID:this.props.mediaID
+    });
   }
 
   loadUser(user) {
-    this.props.dispatch(setCurrentUser(user.id));
-    Actions.userScene({
-      title:user.name
+    return Actions.userScene({
+      title:user.name,
+      userID:user.id
     })
+  }
+
+  favoriteMedia() {
+    this.props.dispatch(favoriteMedia(this.props.mediaID));
+  }
+
+  downloadMedia() {
+    this.props.dispatch(downloadMedia(this.props.mediaID));
   }
 
   render() {
 
     const {mediaReducer,media,user} = this.props;
 
-
     return (
-      <ScrollView style={styles.container} contentInset={{bottom:40}} >
+      <ScrollView contentContainerStyle={styles.container} contentInset={{bottom:49}} >
 
         { mediaReducer.isFetching && <LoadingIndicator /> }
 
         { user && <MediaAuthorInfo user={user} loadUser={this.loadUser.bind(this)}/> }
 
         <View style={styles.buttonWrapper}>
+
           <MediaCommentIcon
             media={media}
             loadComments={() => this.loadComments()}
           />
-          { media.favorites &&
-          <MediaFavoriteIcon
-            media={media}
-            favoriteMedia={() => this.favoriteMedia()}
-            loadFavorites={() => this.loadFavorites()}
-          />
+
+          {
+            media.favorites &&
+            <MediaFavoriteIcon
+              media={media}
+              favoriteMedia={() => this.favoriteMedia()}
+              loadFavorites={() => this.loadFavorites()}
+            />
           }
-          { media.downloads &&
-          <MediaDownloadIcon
-            media={media}
-            downloadMedia={() => this.downloadMedia()}
-            loadDownloads={() => this.loadDownloads()}
-          />
+
+          {
+            media.downloads &&
+            <MediaDownloadIcon
+              media={media}
+              downloadMedia={() => this.downloadMedia()}
+              loadDownloads={() => this.loadDownloads()}
+            />
           }
+
         </View>
+
         <MediaItem media={media} />
+
       </ScrollView>
     );
 
@@ -100,7 +107,6 @@ class Media extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 5,
     paddingTop: 64
   },
@@ -112,18 +118,20 @@ const styles = StyleSheet.create({
   }
 });
 
-function mapStateToProps(state) {
-  const { entities,mediaReducer,userReducer } = state;
-  const media = entities.medias[mediaReducer.current];
-  //const comments = media && media.comments ? media.comments.map((commentID) => Object.assign({},entities.comments[commentID],{user:entities.users[entities.comments[commentID].user]})) : [];
+function makeMapStateToProps(initialState, initialOwnProps) {
+  const mediaID = initialOwnProps.mediaID;
 
-  return {
-    mediaReducer,
-    media,
-    user: entities.users[media.user],
-    //comments: comments,
-    userReducer
+  return function mapStateToProps(state) {
+    const { entities,mediaReducer,userReducer } = state;
+    const media = entities.medias[mediaID];
+
+    return {
+      mediaReducer,
+      media,
+      user: entities.users[media.user],
+      userReducer
+    }
   }
 }
 
-export default connect(mapStateToProps)(Media);
+export default connect(makeMapStateToProps)(Media);

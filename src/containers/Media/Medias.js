@@ -14,22 +14,14 @@ class Medias extends Component {
   }
 
   componentDidMount() {
-    const {dispatch} = this.props;
-    dispatch(fetchMedias());
+    this.props.dispatch(fetchMedias());
   }
 
   loadMedia(media) {
-    this.props.dispatch(setCurrentMedia(media.id));
     Actions.mediaScene({
-      title:media.caption
+      title:media.caption,
+      mediaID:media.id
     });
-  }
-
-  createMedia() {
-    if(!this.props.userReducer.isAuthenticated) {
-      return Actions.loginDialog({dialogText:'Please Login to view and manage your Favorites'});
-    }
-    return Actions.captureMedia();
   }
 
   render() {
@@ -37,7 +29,7 @@ class Medias extends Component {
     const { medias,mediasReducer } = this.props;
 
     return (
-      <ScrollView contentInset={{bottom:40}} contentContainerStyle={{ paddingTop:64 }}>
+      <ScrollView contentInset={{bottom:40}} contentContainerStyle={{ paddingTop:64 }} >
         { mediasReducer.isFetching && <LoadingIndicator /> }
         <MediaList medias={medias} loadMedia={this.loadMedia.bind(this)}/>
       </ScrollView>
@@ -47,7 +39,7 @@ class Medias extends Component {
 }
 
 function mapStateToProps(state) {
-  const {entities,mediasReducer,userReducer } = state;
+  const { entities,mediasReducer,userReducer } = state;
   return {
     medias:entities.medias ? entities.medias.filter((media) => media != undefined ) : [],
     mediasReducer,

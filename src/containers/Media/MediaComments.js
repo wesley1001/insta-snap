@@ -9,6 +9,10 @@ import { Actions } from 'react-native-router-flux';
 
 class MediaComments extends Component {
 
+  static propTypes = {
+    mediaID : PropTypes.number.isRequired
+  }
+
   constructor(props) {
     super(props);
     this.state = {
@@ -22,7 +26,7 @@ class MediaComments extends Component {
   componentWillMount() {
     DeviceEventEmitter.addListener('keyboardWillShow', this.keyboardWillShow.bind(this));
     DeviceEventEmitter.addListener('keyboardWillHide', this.keyboardWillHide.bind(this));
-    this.props.dispatch(fetchComments());
+    this.props.dispatch(fetchComments(this.props.mediaID));
   }
 
   keyboardWillShow(e) {
@@ -35,21 +39,19 @@ class MediaComments extends Component {
   }
 
   commentMedia(comment) {
-    // to manually check if the user is logged in.
-    // this check is not necessary if the app by default restricts to authenticated user's only
-
     if(!this.props.userReducer.isAuthenticated) {
       return Actions.loginDialog({dialogText:'Please Login to view and manage your Favorites'});
     }
 
     const {dispatch} = this.props;
-    dispatch(commentMedia((comment))).then(()=>{
+    dispatch(commentMedia(this.props.mediaID,comment)).then(()=>{
       this.refs.scrollView.scrollTo({x: 0})
     });
   }
 
   render() {
     const {comments} = this.props;
+
     return (
       <ScrollView contentContainerStyle={{paddingBottom: 49,paddingTop: 64, margin:5, height: this.state.visibleHeight}} ref="scrollView">
         <MediaCommentList
@@ -63,15 +65,20 @@ class MediaComments extends Component {
   }
 }
 
-function mapStateToProps(state) {
-  const { entities,mediaReducer,userReducer } = state;
-  const media = entities.medias[mediaReducer.current];
-  const comments = media.comments ? media.comments.map((commentID) => Object.assign({},entities.comments[commentID],{user:entities.users[entities.comments[commentID].user]})) : [];
-  return {
-    comments,
-    mediaReducer,
-    userReducer
+function makeMapStateToProps(initialState, initialOwnProps) {
+
+  const mediaID = initialOwnProps.mediaID;
+
+  return function mapStateToProps(state) {
+    const { entities,mediaReducer,userReducer } = state;
+    const media = entities.medias[mediaID];
+    const comments = media.comments ? media.comments.map((commentID) => Object.assign({},entities.comments[commentID],{user:entities.users[entities.comments[commentID].user]})) : [];
+    return {
+      comments,
+      mediaReducer,
+      userReducer
+    }
   }
 }
 
-export default connect(mapStateToProps)(MediaComments)
+export default connect(makeMapStateToProps)(MediaComments);

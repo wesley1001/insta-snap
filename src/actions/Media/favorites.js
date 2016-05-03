@@ -34,17 +34,22 @@ function updateMediaFavorites(user,media) {
   }
 }
 
-function mediaFavoritesRequest() {
+function mediaFavoritesRequest(mediaID) {
   return {
-    type: MEDIA_FAVORITES_REQUEST
+    type: MEDIA_FAVORITES_REQUEST,
+    entityID:mediaID
   }
 }
 
-function mediaFavoritesSuccess(payload) {
-  const normalized = normalize(payload.data,Schemas.USER);
+function mediaFavoritesSuccess(mediaID,payload) {
+  const normalized = normalize(payload.data,Schemas.USER_ARRAY);
   return {
     type: MEDIA_FAVORITES_SUCCESS,
-    entities: normalized.entities
+    entities: normalized.entities,
+    result:normalized.result,
+    entityID:mediaID,
+    nextPageUrl:payload.next_page_url,
+    total:payload.total
   }
 }
 
@@ -59,11 +64,11 @@ function mediaFavoritesFailure(err) {
  * @returns {Function}
  * Favorite a media
  */
-export function favoriteMedia() {
+export function favoriteMedia(mediaID) {
   return (dispatch,state) => {
 
     const params = {
-      media:state().mediaReducer.current
+      media:mediaID
     };
 
     const media = Object.assign({},state().entities.medias[params.media]);
@@ -79,9 +84,8 @@ export function favoriteMedia() {
         body: JSON.stringify(params)
       })
         .then(response => response.json())
-        .then(json => {
-          //dispatch(fetchFavorites());
-        }).catch((err)=> console.log(err))
+        .then(json => {})
+        .catch((err)=> console.log(err))
     })
   }
 }
@@ -91,21 +95,22 @@ export function favoriteMedia() {
  */
 
 // get Auth user's favorites
-export function fetchMediaFavorites() {
-  return (dispatch,state) => {
-    const mediaID = state().mediaReducer.current;
-    dispatch(mediaFavoritesRequest());
+export function fetchMediaFavorites(mediaID,forceLoad=false) {
+  return (dispatch,getState) => {
+    const {
+      nextPageUrl = API_ROOT + `/medias/${mediaID}/favorites`,
+      pageCount = 0
+      } = getState().pagination.mediaFavorites[mediaID] || {};
+
+    if (nextPageUrl == null || (pageCount > 0 && !forceLoad)) {
+      return null
+    }
+
+    dispatch(mediaFavoritesRequest(mediaID));
     return getUserToken().then((token) => {
-      const url = API_ROOT + `/medias/${mediaID}/favorites?api_token=${token}`;
-      return fetch(url)
+      return fetch(nextPageUrl)
         .then(response => response.json())
-        .then(json => {
-          if(json.success) {
-            dispatch(mediaFavoritesSuccess(json));
-          } else {
-            Promise.reject(new Error(json.message))
-          }
-        })
-    }).catch((err)=> dispatch(mediaFavoritesFailure(err)))
+        .then(json => dispatch(mediaFavoritesSuccess(mediaID,json)))
+    }).catch((err)=> dispatch(mediaFavoritesFailure(mediaID,err)))
   }
 }

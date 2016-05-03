@@ -55,20 +55,10 @@ function mediaDownloadsFailure(err) {
     error:err
   }
 }
-function toggleDownload(payload) {
-  const media = Object.assign({},payload,{isDownloaded:!payload.isDownloaded});
-  const normalized = normalize(media,Schemas.MEDIA);
-  return {
-    type: MEDIA_DOWNLOAD,
-    entities: normalized.entities
-  }
-}
-
 
 // get Auth user's favorites
-export function fetchMediaDownloads() {
-  return (dispatch,state) => {
-    const mediaID = state().mediaReducer.current;
+export function fetchMediaDownloads(mediaID) {
+  return (dispatch) => {
     dispatch(mediaDownloadsRequest());
     return getUserToken().then((token) => {
       const url = API_ROOT + `/medias/${mediaID}/downloads?api_token=${token}`;
@@ -78,8 +68,7 @@ export function fetchMediaDownloads() {
           if(json.success) {
             dispatch(mediaDownloadsSuccess(json));
           } else {
-            console.log('rejected');
-            Promise.reject(new Error(json.message))
+            throw new Error(json.message);
           }
         })
     }).catch((err)=> dispatch(mediaDownloadsFailure(err)))
@@ -90,11 +79,11 @@ export function fetchMediaDownloads() {
  * @returns {Function}
  * Favorite a media
  */
-export function downloadMedia() {
+export function downloadMedia(mediaID) {
   return (dispatch,state) => {
 
     const params = {
-      media:state().mediaReducer.current
+      media:mediaID
     };
 
     const media = Object.assign({},state().entities.medias[params.media]);
@@ -103,7 +92,6 @@ export function downloadMedia() {
     dispatch(updateUserDownloads(user,media));
     dispatch(updateMediaDownloads(user,media));
 
-
     return getUserToken().then((token) => {
       const url = API_ROOT + `/medias/download?api_token=${token}`;
       return fetch(url, {
@@ -111,9 +99,8 @@ export function downloadMedia() {
         body: JSON.stringify(params)
       })
         .then(response => response.json())
-        .then(json => {
-          console.log('json',json)
-        }).catch((err)=> console.log(err))
+        .then(json => {})
+        .catch((err)=> console.log(err))
     })
   }
 }

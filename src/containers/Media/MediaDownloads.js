@@ -3,33 +3,37 @@ import { ScrollView } from 'react-native';
 import { connect } from 'react-redux';
 import { Actions } from 'react-native-router-flux';
 import { fetchMediaDownloads } from './../../actions/Media/downloads';
-import { setCurrentUser,followUser } from './../../actions/User/user';
+import { followUser } from './../../actions/User/user';
 import UserList from './../../components/User/UserList';
 import LoadingIndicator from './../../components/LoadingIndicator';
 
 class MediaDownloads extends Component {
+
+  static propTypes = {
+    mediaID : PropTypes.number.isRequired
+  }
 
   constructor(props) {
     super(props);
   }
 
   componentWillMount() {
-    this.props.dispatch(fetchMediaDownloads());
+    this.props.dispatch(fetchMediaDownloads(this.props.mediaID));
   }
 
   loadUser(user) {
-    this.props.dispatch(setCurrentUser(user.id));
     Actions.userScene({
-      title:user.name
+      title:user.name,
+      userID:user.id
     });
   }
 
   followUser(user) {
-    this.props.dispatch(followUser(user.id));
+    this.props.dispatch(followUser(this.props.userReducer.authUserID,user.id));
   }
 
   render() {
-    const {isFetching,users,userReducer} = this.props;
+    const {users,userReducer} = this.props;
     return (
       <ScrollView contentContainerStyle={{top:64}}>
         <UserList
@@ -43,15 +47,21 @@ class MediaDownloads extends Component {
   }
 }
 
+function makeMapStateToProps(initialState, initialOwnProps) {
 
-function mapStateToProps(state) {
-  const {entities,mediaReducer,userReducer } = state;
-  const media = entities.medias[mediaReducer.current];
-  const mediaDownloads = media.downloads ? media.downloads.map((userID) => entities.users[userID]) : [];
-  return {
-    users:mediaDownloads,
-    isFetching:mediaReducer.downloads.isFetching,
-    userReducer
+  const mediaID = initialOwnProps.mediaID;
+
+  return function mapStateToProps(state) {
+    const {entities,mediaReducer,userReducer } = state;
+    const media = entities.medias[mediaID];
+
+    const mediaDownloads = media.downloads ? media.downloads.map((userID) => entities.users[userID]) : [];
+    return {
+      users:mediaDownloads,
+      isFetching:mediaReducer.downloads.isFetching,
+      userReducer
+    }
   }
 }
-export default connect(mapStateToProps)(MediaDownloads);
+
+export default connect(makeMapStateToProps)(MediaDownloads);

@@ -3,41 +3,39 @@ import { ScrollView, View } from 'react-native';
 import { connect } from 'react-redux';
 import { Actions } from 'react-native-router-flux';
 import { fetchUserDownloads } from './../../actions/User/downloads';
-import { setCurrentMedia } from './../../actions/Media/media';
 import MediaList from './../../components/Media/MediaList';
 import LoadingIndicator from './../../components/LoadingIndicator';
+import LoginDialog from './../../components/LoginDialog';
 
 class UserDownloads extends Component {
+
+  static propTypes = {
+    userID:PropTypes.number
+  }
 
   constructor(props) {
     super(props);
   }
 
   componentDidMount() {
-
-    if(!this.props.userReducer.isAuthenticated) {
-      return Actions.loginDialog({dialogText:'Please Login to view and manage your Favorites'});
-    } else {
-      const {dispatch} = this.props;
-      dispatch(fetchUserDownloads());
-    }
-
+    this.props.dispatch(fetchUserDownloads(this.props.userReducer.authUserID,['downloads']));
   }
 
   loadMedia(media) {
-    this.props.dispatch(setCurrentMedia(media.id));
-    Actions.mediaTab();
-
-    Actions.mediaScene({
-      title:media.caption
+    Actions.mediasRouter();
+    return Actions.mediaScene({
+      title:media.caption,
+      mediaID:media.id
     });
   }
 
   render() {
     const { medias,userReducer } = this.props;
-
+    if(!userReducer.isAuthenticated) {
+      return <LoginDialog message="Please Login to view and manage your Favorites"/>
+    }
     return (
-      <ScrollView contentInset={{bottom:40}} contentContainerStyle={{ paddingTop:64}}>
+      <ScrollView contentInset={{bottom:40}} contentContainerStyle={{ paddingTop:64}} style={{ flex:1 }}>
         { userReducer.downloads.isFetching && <LoadingIndicator/> }
         <MediaList medias={medias.filter((media) => !media.unDownloaded)} loadMedia={this.loadMedia.bind(this)}/>
       </ScrollView>

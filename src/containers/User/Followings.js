@@ -3,42 +3,42 @@ import { ScrollView, View } from 'react-native';
 import { connect } from 'react-redux';
 import { Actions } from 'react-native-router-flux';
 import { fetchUserFollowings } from './../../actions/User/user';
-import { setCurrentMedia } from './../../actions/Media/media';
 import { followUser } from './../../actions/User/user';
-import { setCurrentUser } from './../../actions/User/user';
 import MediaList from './../../components/Media/MediaList';
 import UserList from './../../components/User/UserList';
 import LoadingIndicator from './../../components/LoadingIndicator';
-
+import uniq from 'lodash/uniq';
 class Followings extends Component {
+
+  static propTypes = {
+    userID:PropTypes.number.isRequired
+  }
 
   constructor(props) {
     super(props);
   }
 
   componentDidMount() {
-    const {dispatch} = this.props;
-    //dispatch(fetchUserFollowings());
+    this.props.dispatch(fetchUserFollowings(this.props.userID));
   }
 
   loadMedia(media) {
-    this.props.dispatch(setCurrentMedia(media.id));
-    Actions.mediaTab();
-
-    Actions.mediaScene({
-      title:media.caption
+    Actions.mediasRouter();
+    return Actions.mediaScene({
+      title:media.caption,
+      mediaID:media.id
     });
   }
 
   loadUser(user) {
-    this.props.dispatch(setCurrentUser(user.id));
-    Actions.userScene({
-      title:user.name
+    return Actions.userScene({
+      title:user.name,
+      userID:user.id
     });
   }
 
   followUser(user) {
-    this.props.dispatch(followUser(user.id));
+    this.props.dispatch(followUser(this.props.userReducer.authUserID,user.id));
   }
 
   render() {
@@ -46,7 +46,7 @@ class Followings extends Component {
     return (
       <ScrollView contentInset={{bottom:40}} contentContainerStyle={{ paddingTop:64}}>
         <UserList
-          users={users}
+          users={users.filter((user) => !user.unFollowed)}
           loadUser={this.loadUser.bind(this)}
           followUser={this.followUser.bind(this)}
           authUserID={userReducer.authUserID ? userReducer.authUserID : 0 }
@@ -56,14 +56,16 @@ class Followings extends Component {
   }
 }
 
-function mapStateToProps(state) {
-  const { entities,userReducer } = state;
-  const user = entities.users[userReducer.current];
-
-  return {
-    userReducer,
-    users: user && user.followings ? user.followings.map((userID) => entities.users[userID]) : []
+function makeMapStateToProps(initialState, initialOwnProps) {
+  const userID = initialOwnProps.userID;
+  return function mapStateToProps(state) {
+    const { entities,userReducer } = state;
+    const user = entities.users[userID];
+    return {
+      userReducer,
+      users: user && user.followings ? uniq(user.followings.map((userID) => entities.users[userID]),'id') : []
+    }
   }
 }
 
-export default connect(mapStateToProps)(Followings)
+export default connect(makeMapStateToProps)(Followings)

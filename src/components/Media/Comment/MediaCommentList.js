@@ -49,6 +49,7 @@ export default class MediaCommentList extends Component {
         automaticallyAdjustContentInsets={false}
         style={styles.container}
         renderSeparator={(sectionID, rowID) => <View key={`${sectionID}-${rowID}`} style={styles.separator}/> }
+        enableEmptySections={true}
       />
     )
   }
@@ -91,7 +92,7 @@ var styles = StyleSheet.create({
     color:'black'
   },
   separator: {
-    height:0.5,
+    height:1,
     backgroundColor:'#E8E8E8'
   }
 

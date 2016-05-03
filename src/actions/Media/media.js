@@ -11,7 +11,6 @@ import {
   MEDIA_SAVE_SUCCESS,
   MEDIA_SAVE_REQUEST,
   MEDIA_SAVE_FAILURE,
-  SET_CURRENT_MEDIA
 } from '../../constants/actiontypes';
 
 function mediaSaveSuccess(payload) {
@@ -30,10 +29,13 @@ function mediaSuccess(payload) {
   }
 }
 
-export function fetchMedia() {
-  return (dispatch,state) => {
+export function fetchMedia(mediaID,requiredFields=[]) {
+  return (dispatch,getState) => {
 
-    const mediaID = state().mediaReducer.current;
+    const media = getState().entities.medias[mediaID];
+    if (media && requiredFields.every(key => media.hasOwnProperty(key))) {
+      return null;
+    }
 
     dispatch({type:MEDIA_REQUEST});
 
@@ -42,19 +44,12 @@ export function fetchMedia() {
       return fetch(url)
         .then(response => response.json())
         .then(json => {
-          console.log('json',json);
           dispatch(mediaSuccess(json));
         })
         .catch((err)=> {
           dispatch({type: MEDIA_FAILURE, error: err});
         })
     })
-  }
-}
-
-export function setCurrentMedia(mediaID) {
-  return (dispatch) => {
-    dispatch({type: SET_CURRENT_MEDIA, current: mediaID});
   }
 }
 

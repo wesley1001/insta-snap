@@ -12,28 +12,17 @@ function mediasSuccess(payload) {
   }
 }
 
-export function fetchMedias() {
-  return (dispatch) => {
+export function fetchMedias(requiredFields=[]) {
+  return (dispatch,getState) => {
+
+    //const medias = getState().entities.medias;
+    //if (medias && requiredFields.every(key => medias.hasOwnProperty(key))) {
+    //  return null;
+    //}
+
     dispatch({type:MEDIAS_REQUEST});
     return getUserToken().then((token) => {
       const url = API_ROOT + `/medias?api_token=${token}`;
-      return fetch(url)
-        .then(response => response.json())
-        .then(json => {
-          dispatch(mediasSuccess(json));
-        })
-        .catch((err) => dispatch({type: MEDIAS_FAILURE, error: err}))
-    })
-  }
-}
-
-export function fetchUserMedias() {
-  const url = API_ROOT + '/medias';
-  return (dispatch,state) => {
-    dispatch({type:MEDIAS_REQUEST});
-    const userID = state().userReducer.current;
-    return getUserToken().then((token) => {
-      const url = API_ROOT + `/users/${userID}/medias?api_token=${token}`;
       return fetch(url)
         .then(response => response.json())
         .then(json => {

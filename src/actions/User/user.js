@@ -52,21 +52,16 @@ function userFollowersSuccess(payload) {
   }
 }
 
-export function setCurrentUser(id) {
-  return (dispatch) => {
-    dispatch({type:SET_CURRENT_USER,current:id});
-  }
-}
+export function fetchUser(userID,requiredFields=[]) {
 
-export function fetchUser(id=null) {
-  return (dispatch,state) => {
-    const currentID = id ? id : state().userReducer.current;
-    if(state().entities.users[currentID].followers) {
-      return;
+  return (dispatch,getState) => {
+    const user = getState().entities.users[userID];
+    if (user && requiredFields.every(key => user.hasOwnProperty(key))) {
+      return null;
     }
     dispatch({type:USER_REQUEST});
     return getUserToken().then((token) => {
-        const url = API_ROOT + `/users/${currentID}?api_token=${token}`;
+        const url = API_ROOT + `/users/${userID}?api_token=${token}`;
         return fetch(url)
           .then(response => response.json())
           .then(json => {
@@ -79,12 +74,15 @@ export function fetchUser(id=null) {
   }
 }
 
-export function fetchUserMedias() {
-  return (dispatch,state) => {
+export function fetchUserMedias(userID,requiredFields=[]) {
+  return (dispatch,getState) => {
+    const user = getState().entities.users[userID];
+    if (user && requiredFields.every(key => user.hasOwnProperty(key))) {
+      return null;
+    }
     dispatch({type:USER_MEDIAS_REQUEST});
-    const currentID = state().userReducer.current;
     return getUserToken().then((token) => {
-        const url = API_ROOT + `/users/${currentID}/medias?api_token=${token}`;
+        const url = API_ROOT + `/users/${userID}/medias?api_token=${token}`;
         return fetch(url)
           .then(response => response.json())
           .then(json => {
@@ -97,12 +95,15 @@ export function fetchUserMedias() {
   }
 }
 
-export function fetchUserFollowings() {
-  return (dispatch,state) => {
+export function fetchUserFollowings(userID,requiredFields=[]) {
+  return (dispatch,getState) => {
+    const user = getState().entities.users[userID];
+    if (user && requiredFields.every(key => user.hasOwnProperty(key))) {
+      return null;
+    }
     dispatch({type:USER_FOLLOWINGS_REQUEST});
-    const currentID = state().userReducer.current;
     return getUserToken().then((token) => {
-        const url = API_ROOT + `/users/${currentID}/followings?api_token=${token}`;
+        const url = API_ROOT + `/users/${userID}/followings?api_token=${token}`;
         return fetch(url)
           .then(response => response.json())
           .then(json => {
@@ -115,12 +116,15 @@ export function fetchUserFollowings() {
   }
 }
 
-export function fetchUserFollowers() {
-  return (dispatch,state) => {
+export function fetchUserFollowers(userID,requiredFields=[]) {
+  return (dispatch,getState) => {
+    const user = getState().entities.users[userID];
+    if (user && requiredFields.every(key => user.hasOwnProperty(key))) {
+      return null;
+    }
     dispatch({type:USER_FOLLOWERS_REQUEST});
-    const currentID = state().userReducer.current;
     return getUserToken().then((token) => {
-        const url = API_ROOT + `/users/${currentID}/followers?api_token=${token}`;
+        const url = API_ROOT + `/users/${userID}/followers?api_token=${token}`;
         return fetch(url)
           .then(response => response.json())
           .then(json => {
@@ -160,11 +164,8 @@ function updateFollowee(authUser,followee) {
   }
 }
 
-export function followUser(userID) {
+export function followUser(authUserID,followeeID) {
   return (dispatch,state) => {
-
-    const authUserID = state().userReducer.authUserID; // follower
-    const followeeID = userID;
 
     const authUser = Object.assign({},state().entities.users[authUserID]);
     const followee = Object.assign({},state().entities.users[followeeID]);
@@ -183,8 +184,8 @@ export function followUser(userID) {
         body: JSON.stringify(params)
       })
         .then(response => response.json())
-        .then(json => {
-        }).catch((err)=> console.log(err))
+        .then(json => {})
+        .catch((err)=> console.log(err))
     })
   }
 }
